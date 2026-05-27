@@ -1,75 +1,101 @@
-
-```markdown
 # Publisher CMS & Author Analytics Dashboard
 
-A modern, type-safe full-stack content management architecture designed as a clean workspace split between a high-performance backend REST API and a responsive admin analytics dashboard. Features strict relational data validation, nested cascade deletion safety rules, and real-time computation metrics.
+A modern, type-safe full-stack content management system designed as a clean workspace split between a high-performance backend REST API and a responsive admin analytics dashboard. It features strict relational data validation, cascade deletion safety rules, and real-time analytics computation.
 
 ---
 
-## 🏗 Architecture Blueprint
+# 🏗 Architecture Blueprint
 
-The project is structured as a single unified repository managing two decoupled, highly interactive domains:
+The project is organized as a unified monorepo containing two decoupled domains:
 
-* **`backend/`**: Managed by Hono, using Zod for strict multi-table structural runtime validation, and Drizzle ORM to interface with an embedded local SQLite database.
-* **`frontend/`**: Powered by Vite + React + TypeScript, executing reactive layout pipelines and state caching via TanStack Query, styled with Tailwind CSS and Lucide micro-vectors.
+* **`backend/`**
+  Built with Hono, powered by Zod runtime validation and Drizzle ORM connected to a local SQLite database.
 
----
-
-## 🛠 Tech Stack & Ecosystem
-
-### Backend Architecture
-* **Runtime Framework:** [Hono](https://hono.dev/) (Ultra-fast, lightweight web engine)
-* **Database Layer:** [SQLite](https://sqlite.org/) (Local serverless database configuration)
-* **ORM Engine:** [Drizzle ORM](https://orm.drizzle.team/) (TypeScript-first relational SQL mapper)
-* **Schema Control:** [Drizzle Kit](https://orm.drizzle.team/docs/kit-overview) (Automated migrations & database pushes)
-* **Data Validation:** [Zod](https://zod.dev/) (Strict contract schema validation)
-
-### Frontend Engine
-* **Build Architecture:** [Vite](https://vite.dev/) + React + TypeScript
-* **Asynchronous Caching State:** [TanStack Query v5](https://tanstack.com/query/latest) (React Query)
-* **Interface Foundations:** [Tailwind CSS](https://tailwindcss.com/)
-* **Micro-Interactions & Toasts:** [Sonner](https://sonner.emilkowal.ski/) (High-performance native toast streams)
-* **Icon Suite:** [Lucide React](https://lucide.dev/)
+* **`frontend/`**
+  Built with Vite + React + TypeScript, using TanStack Query for state management and Tailwind CSS for responsive UI styling.
 
 ---
 
-## 📦 Directory Structure
+# 🛠 Tech Stack & Ecosystem
+
+## Backend Architecture
+
+* **Runtime Framework:**
+  [Hono](https://hono.dev?utm_source=chatgpt.com) — Ultra-fast lightweight web framework
+
+* **Database Layer:**
+  [SQLite](https://sqlite.org?utm_source=chatgpt.com) — Embedded serverless relational database
+
+* **ORM Engine:**
+  [Drizzle ORM](https://orm.drizzle.team?utm_source=chatgpt.com) — TypeScript-first SQL ORM
+
+* **Migration & Schema Tooling:**
+  [Drizzle Kit](https://orm.drizzle.team/docs/kit-overview?utm_source=chatgpt.com) — Automated schema migration management
+
+* **Validation Engine:**
+  [Zod](https://zod.dev?utm_source=chatgpt.com) — Runtime-safe schema validation
+
+---
+
+## Frontend Architecture
+
+* **Frontend Framework:**
+  [Vite](https://vite.dev?utm_source=chatgpt.com) + React + TypeScript
+
+* **Server State Management:**
+  [TanStack Query v5](https://tanstack.com/query/latest?utm_source=chatgpt.com)
+
+* **Styling System:**
+  [Tailwind CSS](https://tailwindcss.com?utm_source=chatgpt.com)
+
+* **Toast Notifications:**
+  [Sonner](https://sonner.emilkowal.ski?utm_source=chatgpt.com)
+
+* **Icon Library:**
+  [Lucide React](https://lucide.dev?utm_source=chatgpt.com)
+
+---
+
+# 📦 Directory Structure
 
 ```text
 Hono Api/
-├── backend/                  # Hono Core Framework Engine
+├── backend/
 │   ├── src/
 │   │   ├── db/
-│   │   │   ├── index.ts      # Database Client Instantiation
-│   │   │   └── schema.ts     # Relational Drizzle Table Schemas (One-to-Many)
+│   │   │   ├── index.ts
+│   │   │   └── schema.ts
 │   │   ├── routes/
-│   │   │   └── author.ts     # Validated Relational REST Endpoints
-│   │   └── index.ts          # Main Server Gateway Entrypoint
-│   ├── drizzle/              # Generated Migration Footprints
-│   ├── drizzle.config.ts     # Drizzle Kit Sync Specifications
+│   │   │   └── author.ts
+│   │   └── index.ts
+│   │
+│   ├── drizzle/
+│   ├── drizzle.config.ts
 │   ├── package.json
 │   └── tsconfig.json
-├── frontend/                 # Vite User Interface Workspace
+│
+├── frontend/
 │   ├── src/
-│   │   ├── assets/           # Visual Dashboard Graph Assets
-│   │   ├── App.tsx           # Dashboard Engine, Forms, & Analytics Computations
-│   │   ├── index.css         # Global Tailwind Directives
-│   │   └── main.tsx          # Client Dom Mount Entry Point
+│   │   ├── assets/
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   │
 │   ├── index.html
 │   ├── package.json
-│   ├── tailwind.config.js    # Tailwind Class Scanning Configuration
+│   ├── tailwind.config.js
 │   └── postcss.config.js
-└── .gitignore                # Global Workspace Tracking Exclusions
-
+│
+└── .gitignore
 ```
 
 ---
 
-## 🎛 Database Schemas & Runtime Validation
+# 🎛 Database Schemas & Runtime Validation
 
-### 1. Relational Database Blueprints (Drizzle ORM)
+## 1. Relational Database Blueprint (Drizzle ORM)
 
-The database sets up a structural **One-to-Many Relationship** between authors and posts, utilizing deep cascade rules:
+The application establishes a **One-to-Many** relationship between authors and posts using cascading delete rules.
 
 ```typescript
 export const authorsTable = sqliteTable('authors', {
@@ -85,102 +111,149 @@ export const postsTable = sqliteTable('posts', {
   content: text('content').notNull(),
   authorId: integer('author_id')
     .notNull()
-    .references(() => authorsTable.id, { onDelete: 'cascade' }), // Automatically purges history
+    .references(() => authorsTable.id, {
+      onDelete: 'cascade',
+    }),
 });
-
 ```
 
-### 2. Payload Validation Contracts (Zod)
+---
+
+## 2. Payload Validation Contracts (Zod)
 
 ```typescript
 const createAuthorSchema = z.object({
   name: z.string().min(2),
   email: z.string().trim().email(),
-  age: z.coerce.number().min(18).optional().nullable()
+  age: z.coerce.number().min(18).optional().nullable(),
 });
 
 const createPostSchema = z.object({
   title: z.string().min(3),
   content: z.string().min(5),
-  authorId: z.number()
+  authorId: z.number(),
 });
-
 ```
 
 ---
 
-## 📊 Live Administrative Analytics Engine
+# 📊 Live Administrative Analytics Engine
 
-The frontend dashboard performs real-time functional array reductions directly on the cached asynchronous state. The following operational parameters are dynamically computed on every mutation confirmation:
+The frontend dashboard computes live analytics directly from cached asynchronous state.
 
-* **Total Authors Registered**: Direct evaluation of tracking length.
-* **Total Posts Published**: Iterative reduction combining total lengths across all structural content records.
-* **Top Contributor Leaderboard**: Live ranking algorithm tracing composition volume to identify the most active author.
+### Real-Time Metrics
+
+* **Total Authors Registered**
+  Counts all active author records.
+
+* **Total Posts Published**
+  Aggregates post counts across all authors.
+
+* **Top Contributor Leaderboard**
+  Dynamically ranks authors by total published posts.
 
 ---
 
-## ⚡ Getting Started & Installation
+# ⚡ Getting Started & Installation
 
-### 1. Set Up the Local Environment Configurations
+## 1. Configure `.gitignore`
 
-Ensure your project contains a root `.gitignore` to prevent tracking local dependencies and binaries:
+Create a root `.gitignore` file:
 
-```text
+```gitignore
 node_modules/
 frontend/node_modules/
 *.db
 *.db-journal
 *.sqlite
 .env
-
 ```
-
-### 2. Prepare and Run the Backend Engine
-
-Navigate to the backend environment, install dependencies, and push your schema mappings to the local SQLite storage engine:
-
-```bash
-cd backend
-npm install
-
-# Push structural database schemas live via Drizzle-Kit
-npx drizzle-kit push
-
-# Boot up the server
-npm run dev
-
-```
-
-The Hono backend API listener will open up at: `http://localhost:3000`
-
-### 3. Start the Frontend Workspace
-
-Open a secondary terminal instance, navigate to the user interface folder, and start the Vite compiler:
-
-```bash
-cd frontend
-npm install
-npm run dev
-
-```
-
-The client UI will spin up on your local machine at: `http://localhost:5173`
 
 ---
 
-## 📡 API Endpoint Coverage Matrix
+## 2. Start the Backend Server
 
-The Hono service routes SQL `LEFT JOIN` aggregations paired with input filters:
+```bash
+cd backend
 
-| HTTP Method | Route Gateway | Validation Guard | Operational Intent | Success Code |
-| --- | --- | --- | --- | --- |
-| **`GET`** | `/author` | None | Fetch all authors alongside a nested array of their posts | `200 OK` |
-| **`POST`** | `/author` | `createAuthorSchema` | Validate and register a new author profile | `201 Created` |
-| **`POST`** | `/author/post` | `createPostSchema` | Link and post a new article block to a profile | `201 Created` |
-| **`DELETE`** | `/author/:id` | Route Param Check | Purges author and all their posts via CASCADE rules | `200 OK` |
+npm install
 
-*Bad requests failing Zod criteria are intercepted at the gateway, returning a `400 Bad Request` code with field-specific diagnostics, which the frontend displays using responsive toast notifications.*
+# Push Drizzle schemas to SQLite
+npx drizzle-kit push
 
+# Start development server
+npm run dev
 ```
 
+Backend server runs at:
+
+```text
+http://localhost:3000
 ```
+
+---
+
+## 3. Start the Frontend Application
+
+Open another terminal:
+
+```bash
+cd frontend
+
+npm install
+npm run dev
+```
+
+Frontend runs at:
+
+```text
+http://localhost:5173
+```
+
+---
+
+# 📡 API Endpoint Coverage Matrix
+
+The backend exposes validated REST endpoints with relational aggregation support.
+
+| Method   | Route          | Validation             | Purpose                             | Status        |
+| -------- | -------------- | ---------------------- | ----------------------------------- | ------------- |
+| `GET`    | `/author`      | None                   | Fetch all authors with nested posts | `200 OK`      |
+| `POST`   | `/author`      | `createAuthorSchema`   | Create a new author profile         | `201 Created` |
+| `POST`   | `/author/post` | `createPostSchema`     | Create a post linked to an author   | `201 Created` |
+| `DELETE` | `/author/:id`  | Route param validation | Delete author and cascade posts     | `200 OK`      |
+
+---
+
+# ✅ Validation & Error Handling
+
+Requests failing Zod validation are intercepted before database execution and return structured validation responses.
+
+Example response:
+
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "email": ["Invalid email format"]
+  }
+}
+```
+
+The frontend consumes these responses and displays interactive toast notifications using Sonner.
+
+---
+
+# 🚀 Key Features
+
+* Type-safe full-stack architecture
+* Runtime validation with Zod
+* SQLite relational persistence
+* Drizzle ORM schema management
+* Cascade deletion safety
+* Reactive analytics dashboard
+* Real-time query synchronization
+* Toast-based feedback system
+* Modern responsive UI
+* Fully modular project structure
