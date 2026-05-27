@@ -1,65 +1,91 @@
-// routes/author.ts
 import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { db } from '../db/index.ts';               // 1. Import DB client
-import { authorsTable } from '../db/schema.ts';
-import { eq } from 'drizzle-orm'; // 2. Import DB Schema
+import { zValidator } from '@hono/zod-validator';
+import { eq } from 'drizzle-orm';
+import { db } from '../db/index.ts';
+import { authorsTable, postsTable } from '../db/schema.ts';
 
 const app = new Hono();
 
+// --- ZOD SCHEMAS ---
 const createAuthorSchema = z.object({
   name: z.string().min(2),
-  email: z.string().email(),
-  age: z.number().min(18).optional()
+  email: z.string().trim().email(),
+  age: z.coerce.number().min(18).optional().nullable()
 });
 
-// ROUTE 1: GET all authors from the database
+const createPostSchema = z.object({
+  title: z.string().min(3),
+  content: z.string().min(5),
+  authorId: z.number()
+});
+
+// --- ROUTES ---
+
+// 1. GET ALL AUTHORS (With their nested posts!)
 app.get('/', async (c) => {
-  const allAuthors = await db.select().from(authorsTable);
-  return c.json(allAuthors);
+  // Query using a SQL Left Join to grab everything at once
+  const rows = await db
+    .select({
+      author: authorsTable,
+      post: postsTable,
+    })
+    .from(authorsTable)
+    .leftJoin(postsTable, eq(authorsTable.id, postsTable.authorId));
+
+  // Reduce flat rows into a clean, nested JSON structure
+  const result = rows.reduce<Record<number, any>>((acc, row) => {
+    const author = row.author;
+    const post = row.post;
+
+    if (!acc[author.id]) {
+      acc[author.id] = { ...author, posts: [] };
+    }
+
+    if (post) {
+      acc[author.id].posts.push({
+        id: post.id,
+        title: post.title,
+        content: post.content
+      });
+    }
+
+    return acc;
+  }, {});
+
+  return c.json(Object.values(result));
 });
 
-// ROUTE 2: POST to validate and insert a new author
+// 2. POST NEW AUTHOR
 app.post('/', zValidator('json', createAuthorSchema), async (c) => {
   const validatedData = c.req.valid('json');
-
-  // 3. Use Drizzle to insert the validated data into your table
-  const newAuthor = await db.insert(authorsTable).values({
-    name: validatedData.name,
-    email: validatedData.email,
-    age: validatedData.age,
-  }).returning(); // .returning() yields the newly created row with its generated ID
-
-  return c.json({
-    success: true,
-    data: newAuthor[0]
-  }, 201);
+  try {
+    const newAuthor = await db.insert(authorsTable).values(validatedData).returning();
+    return c.json(newAuthor[0], 201);
+  } catch (error: any) {
+    if (error.message?.includes('UNIQUE constraint failed')) {
+      return c.json({ success: false, message: "Email address already registered" }, 400);
+    }
+    return c.json({ success: false, message: "Database insertion failure" }, 500);
+  }
 });
 
+// 3. POST NEW ARTICLE (Assigned to a specific Author)
+app.post('/post', zValidator('json', createPostSchema), async (c) => {
+  const validatedData = c.req.valid('json');
+  const newPost = await db.insert(postsTable).values(validatedData).returning();
+  return c.json(newPost[0], 201);
+});
 
-
-// ROUTE 3: DELETE an author by ID
+// 4. DELETE AN AUTHOR (Cascades to automatically drop their posts)
 app.delete('/:id', async (c) => {
   const id = Number(c.req.param('id'));
-  
-  if (isNaN(id)) {
-    return c.json({ success: false, message: "Invalid ID format" }, 400);
-  }
+  if (isNaN(id)) return c.json({ success: false, message: "Invalid ID format" }, 400);
 
-  // Use Drizzle to delete the row matching the ID
-  const deletedAuthor = await db.delete(authorsTable)
-    .where(eq(authorsTable.id, id)) // Make sure you import 'eq' from 'drizzle-orm' at the top!
-    .returning();
+  const deletedAuthor = await db.delete(authorsTable).where(eq(authorsTable.id, id)).returning();
+  if (deletedAuthor.length === 0) return c.json({ success: false, message: "Author not found" }, 404);
 
-  if (deletedAuthor.length === 0) {
-    return c.json({ success: false, message: "Author not found" }, 404);
-  }
-
-  return c.json({ success: true, message: "Author deleted successfully" });
+  return c.json({ success: true, message: "Author and their articles wiped successfully" });
 });
-
-
-
 
 export default app;
