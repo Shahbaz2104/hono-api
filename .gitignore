@@ -1,5 +1,17 @@
+# Dependency folders
 node_modules/
+frontend/node_modules/
+
+# Local databases & configurations
+*.db
+*.db-journal
+*.sqlite
 .env
-sqlite.db
-sqlite.db-journal
+.env.local
+
+# Build and log outputs
 dist/
+frontend/dist/
+.eslintcache
+*.log
+.DS_Store
