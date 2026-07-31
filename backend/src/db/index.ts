@@ -1,7 +1,10 @@
-// src/db/index.ts
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as schema from './schema.ts';
 
-const sqlite = new Database('sqlite.db');
-export const db = drizzle(sqlite, { schema });
+export type Database = NodePgDatabase<typeof schema>;
+
+export function createDb(databaseUrl: string): Database {
+  const pool = new Pool({ connectionString: databaseUrl });
+  return drizzle(pool, { schema });
+}
