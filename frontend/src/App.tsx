@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserPlus, Mail, Calendar, Trash2, Users, Loader2, BookOpen, ChevronDown, ChevronUp, FileText, BarChart3, Award, FileSpreadsheet } from 'lucide-react';
+import { UserPlus, Mail, Trash2, Users, Loader2, BookOpen, ChevronDown, ChevronUp, FileText, Award, FileSpreadsheet } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
 interface Post {
@@ -33,7 +33,7 @@ export default function App() {
   const { data: authors, isLoading, error } = useQuery<Author[]>({
     queryKey: ['authors'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:3000/author');
+      const res = await fetch('/author');
       if (!res.ok) throw new Error('Failed to synchronize directory data');
       return res.json();
     }
@@ -59,7 +59,7 @@ export default function App() {
   // MUTATIONS
   const addAuthorMutation = useMutation({
     mutationFn: async (newAuthor: { name: string; email: string; age?: number }) => {
-      const res = await fetch('http://localhost:3000/author', {
+      const res = await fetch('/author', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAuthor),
@@ -71,13 +71,13 @@ export default function App() {
       return res.json();
     },
     onMutate: () => ({ toastId: toast.loading('Registering author...') }),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (_data, variables, context) => {
       toast.dismiss(context?.toastId);
       toast.success(`Author "${variables.name}" registered!`);
       queryClient.invalidateQueries({ queryKey: ['authors'] });
       setName(''); setEmail(''); setAge('');
     },
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       toast.dismiss(context?.toastId);
       toast.error(`Error: ${err.message}`);
     }
@@ -85,7 +85,7 @@ export default function App() {
 
   const addPostMutation = useMutation({
     mutationFn: async (newPost: { title: string; content: string; authorId: number }) => {
-      const res = await fetch('http://localhost:3000/author/post', {
+      const res = await fetch('/author/post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost),
@@ -94,14 +94,14 @@ export default function App() {
       return res.json();
     },
     onMutate: () => ({ toastId: toast.loading('Publishing post...') }),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (_data, variables, context) => {
       toast.dismiss(context?.toastId);
       toast.success(`"${variables.title}" published!`);
       queryClient.invalidateQueries({ queryKey: ['authors'] });
       setExpandedAuthorId(variables.authorId);
       setTitle(''); setContent(''); setSelectedAuthorId('');
     },
-    onError: (err, variables, context) => {
+    onError: (err, _variables, context) => {
       toast.dismiss(context?.toastId);
       toast.error(`Error: ${err.message}`);
     }
@@ -109,7 +109,7 @@ export default function App() {
 
   const deleteAuthorMutation = useMutation({
     mutationFn: async ({ id, authorName }: { id: number; authorName: string }) => {
-      const res = await fetch(`http://localhost:3000/author/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/author/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Database refused deletion');
       return { id, authorName };
     },

@@ -24,36 +24,16 @@ const createPostSchema = z.object({
 
 // 1. GET ALL AUTHORS (With their nested posts!)
 app.get('/', async (c) => {
-  // Query using a SQL Left Join to grab everything at once
-  const rows = await db
-    .select({
-      author: authorsTable,
-      post: postsTable,
-    })
-    .from(authorsTable)
-    .leftJoin(postsTable, eq(authorsTable.id, postsTable.authorId));
+  const authors = await db.query.authorsTable.findMany({
+    with: { posts: true },
+  });
 
-  // Reduce flat rows into a clean, nested JSON structure
-  const result = rows.reduce<Record<number, any>>((acc, row) => {
-    const author = row.author;
-    const post = row.post;
+  const result = authors.map(({ posts, ...author }) => ({
+    ...author,
+    posts: posts.map(({ id, title, content }) => ({ id, title, content })),
+  }));
 
-    if (!acc[author.id]) {
-      acc[author.id] = { ...author, posts: [] };
-    }
-
-    if (post) {
-      acc[author.id].posts.push({
-        id: post.id,
-        title: post.title,
-        content: post.content
-      });
-    }
-
-    return acc;
-  }, {});
-
-  return c.json(Object.values(result));
+  return c.json(result);
 });
 
 // 2. POST NEW AUTHOR
@@ -73,8 +53,15 @@ app.post('/', zValidator('json', createAuthorSchema), async (c) => {
 // 3. POST NEW ARTICLE (Assigned to a specific Author)
 app.post('/post', zValidator('json', createPostSchema), async (c) => {
   const validatedData = c.req.valid('json');
-  const newPost = await db.insert(postsTable).values(validatedData).returning();
-  return c.json(newPost[0], 201);
+  try {
+    const newPost = await db.insert(postsTable).values(validatedData).returning();
+    return c.json(newPost[0], 201);
+  } catch (error: any) {
+    if (error.message?.includes('FOREIGN KEY constraint failed')) {
+      return c.json({ success: false, message: "Author does not exist" }, 400);
+    }
+    return c.json({ success: false, message: "Database insertion failure" }, 500);
+  }
 });
 
 // 4. DELETE AN AUTHOR (Cascades to automatically drop their posts)

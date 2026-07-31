@@ -234,9 +234,9 @@ Example response:
 ```json
 {
   "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "email": ["Invalid email format"]
+  "error": {
+    "name": "ZodError",
+    "message": "[ ... validation issues with path and message per field ... ]"
   }
 }
 ```

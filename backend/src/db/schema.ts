@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 // 1. Your Existing Authors Table
@@ -18,3 +19,14 @@ export const postsTable = sqliteTable('posts', {
     .notNull()
     .references(() => authorsTable.id, { onDelete: 'cascade' }), 
 });
+
+export const authorsRelations = relations(authorsTable, ({ many }) => ({
+  posts: many(postsTable),
+}));
+
+export const postsRelations = relations(postsTable, ({ one }) => ({
+  author: one(authorsTable, {
+    fields: [postsTable.authorId],
+    references: [authorsTable.id],
+  }),
+}));
