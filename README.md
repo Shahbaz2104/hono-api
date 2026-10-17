@@ -5,17 +5,19 @@
 
 A type-safe full-stack content management system with JWT authentication, a paginated REST API, and a live analytics dashboard. Built as a clean split between a high-performance backend and a responsive admin frontend — with runtime validation, cascade deletion safety, and server-side analytics.
 
-<!-- DEMO-START
 ## 🖥️ Demo
 
 ![Login](docs/screenshots/login.png)
-![Dashboard](docs/screenshots/dashboard.png)
-![Author detail](docs/screenshots/author-detail.png)
 
-https://github.com/Shahbaz2104/hono-api/assets/docs/screenshots/demo.gif
+| Dashboard | Author detail |
+| --- | --- |
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Author detail](docs/screenshots/author-detail.png) |
 
-Capture instructions: [docs/DEMO.md](docs/DEMO.md)
-DEMO-END -->
+**Register → add an author → publish a post → open the profile → delete (cascade):**
+
+![Demo](docs/screenshots/demo.gif)
+
+*Also captured: [success toast](docs/screenshots/toast.png) · [raw video](docs/screenshots/demo.webm) · capture guide: [docs/DEMO.md](docs/DEMO.md)*
 
 ---
 
