@@ -1,5 +1,5 @@
 import { Users, FileSpreadsheet, Award } from 'lucide-react';
-import type { Analytics } from '../lib/analytics.ts';
+import type { AuthorStats } from '../lib/types.ts';
 
 const cards = [
   { key: 'authors', label: 'Total Authors', icon: Users, iconBg: 'bg-indigo-50 text-indigo-600', darkIconBg: 'dark:bg-indigo-500/10 dark:text-indigo-400' },
@@ -7,7 +7,7 @@ const cards = [
   { key: 'top', label: 'Top Contributor', icon: Award, iconBg: 'bg-amber-50 text-amber-600', darkIconBg: 'dark:bg-amber-500/10 dark:text-amber-400' },
 ] as const;
 
-export function StatCards({ analytics }: { analytics: Analytics }) {
+export function StatCards({ analytics }: { analytics: AuthorStats }) {
   const values = {
     authors: analytics.totalAuthors,
     posts: analytics.totalPosts,

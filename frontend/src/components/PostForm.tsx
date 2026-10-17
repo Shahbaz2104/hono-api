@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FileText } from 'lucide-react';
-import type { Author, NewPost } from '../lib/types.ts';
+import type { AuthorOption, NewPost } from '../lib/types.ts';
 
 interface PostFormProps {
-  authors: Author[];
+  authors: AuthorOption[];
   selectedAuthorId?: string;
   submitLabel?: string;
   onSubmit: (data: NewPost) => void;

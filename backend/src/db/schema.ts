@@ -1,5 +1,13 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, serial, text, integer } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core';
+
+// 0. Users Table (auth)
+export const usersTable = pgTable('users', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // 1. Authors Table
 export const authorsTable = pgTable('authors', {

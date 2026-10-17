@@ -1,17 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Mail, FileText, Pencil, X, Check } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail, FileText, Pencil, X, Check, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useAuthors } from '../hooks/useAuthors.ts';
-import { updatePost, updateAuthor } from '../lib/api.ts';
-import type { Author } from '../lib/types.ts';
+import { useAuthor } from '../hooks/useAuthor.ts';
+import { updatePost, updateAuthor, deletePost } from '../lib/api.ts';
 
-function PostCard({ postId, title, content, onSave }: {
+function PostCard({ postId, title, content, onSave, onDelete }: {
   postId: number;
   title: string;
   content: string;
   onSave: (id: number, data: { title: string; content: string }) => void;
+  onDelete: (id: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
@@ -22,13 +22,22 @@ function PostCard({ postId, title, content, onSave }: {
       <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200/60 dark:border-slate-700 shadow-xs">
         <div className="flex items-start justify-between gap-2">
           <h5 className="text-xs font-bold text-slate-800 dark:text-slate-100">{title}</h5>
-          <button
-            onClick={() => setIsEditing(true)}
-            className="p-1 text-slate-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors shrink-0"
-            title="Edit post"
-          >
-            <Pencil size={13} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="p-1 text-slate-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-colors"
+              title="Edit post"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              onClick={() => onDelete(postId)}
+              className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors"
+              title="Delete post"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{content}</p>
       </div>
@@ -73,17 +82,28 @@ export function AuthorDetail() {
   const { id } = useParams();
   const authorId = Number(id);
   const queryClient = useQueryClient();
-  const { data: authors = [], isLoading, error } = useAuthors();
+  const { data: author, isLoading, error } = useAuthor(authorId);
 
-  const author: Author | undefined = authors.find((a) => a.id === authorId);
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['authors'] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['authors'] });
+    queryClient.invalidateQueries({ queryKey: ['author', authorId] });
+    queryClient.invalidateQueries({ queryKey: ['author-stats'] });
+  };
 
   const updatePostMutation = useMutation({
     mutationFn: ({ postId, data }: { postId: number; data: { title: string; content: string } }) =>
       updatePost(postId, data),
     onSuccess: (_data, variables) => {
       toast.success(`Post #${variables.postId} updated!`);
+      invalidate();
+    },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: (postId: number) => deletePost(postId),
+    onSuccess: (_data, postId) => {
+      toast.success(`Post #${postId} deleted.`);
       invalidate();
     },
     onError: (err) => toast.error(`Error: ${err.message}`),
@@ -110,7 +130,7 @@ export function AuthorDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
         <div className="bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-900/40 p-6 rounded-2xl max-w-sm text-center shadow-sm">
-          <h3 className="text-md font-bold text-slate-900 dark:text-slate-100 mt-2">Author not found</h3>
+          <h3 className="text-md font-bold text-slate-900 dark:text-slate-100">Author not found</h3>
           <Link to="/" className="inline-block mt-4 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
             ← Back to dashboard
           </Link>
@@ -168,6 +188,14 @@ export function AuthorDetail() {
                 title={post.title}
                 content={post.content}
                 onSave={(postId, data) => updatePostMutation.mutate({ postId, data })}
+                onDelete={(postId) =>
+                  toast.warning('Delete this post?', {
+                    action: {
+                      label: 'Delete',
+                      onClick: () => deletePostMutation.mutate(postId),
+                    },
+                  })
+                }
               />
             ))
           )}

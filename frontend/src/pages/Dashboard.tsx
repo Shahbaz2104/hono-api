@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuthors } from '../hooks/useAuthors.ts';
-import { computeAnalytics } from '../lib/analytics.ts';
+import { useAuthorStats } from '../hooks/useAuthorStats.ts';
+import { useAuthorOptions } from '../hooks/useAuthorOptions.ts';
 import { createAuthor, createPost, deleteAuthor, updateAuthor } from '../lib/api.ts';
 import type { Author } from '../lib/types.ts';
 import { StatCards } from '../components/StatCards.tsx';
@@ -12,12 +13,23 @@ import { AuthorList } from '../components/AuthorList.tsx';
 import { EditAuthorModal } from '../components/EditAuthorModal.tsx';
 import { useState } from 'react';
 
+const PAGE_SIZE = 20;
+
 export function Dashboard() {
   const queryClient = useQueryClient();
-  const { data: authors = [], isLoading, error } = useAuthors();
+  const [page, setPage] = useState(1);
+  const { data: paginated, isLoading, error } = useAuthors(page, PAGE_SIZE);
+  const { data: stats } = useAuthorStats();
+  const { data: authorOptions = [] } = useAuthorOptions();
   const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['authors'] });
+  const authors = paginated?.items ?? [];
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['authors'] });
+    queryClient.invalidateQueries({ queryKey: ['author-stats'] });
+    queryClient.invalidateQueries({ queryKey: ['author-options'] });
+  };
 
   const addAuthorMutation = useMutation({
     mutationFn: createAuthor,
@@ -65,6 +77,7 @@ export function Dashboard() {
     },
     onSuccess: (author) => {
       toast.success(`Removed "${author.name}" and their history.`);
+      if (authors.length === 1 && page > 1) setPage(page - 1);
       invalidate();
     },
     onError: (err) => toast.error(`Error: ${err.message}`),
@@ -93,8 +106,6 @@ export function Dashboard() {
     );
   }
 
-  const analytics = computeAnalytics(authors);
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-2xl mx-auto">
@@ -108,19 +119,30 @@ export function Dashboard() {
           </div>
         </div>
 
-        <StatCards analytics={analytics} />
+        <StatCards
+          analytics={
+            stats ?? { totalAuthors: 0, totalPosts: 0, topAuthor: null }
+          }
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
             <AuthorForm onSubmit={(data) => addAuthorMutation.mutate(data)} isPending={addAuthorMutation.isPending} />
           </div>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5">
-            <PostForm authors={authors} onSubmit={(data) => addPostMutation.mutate(data)} isPending={addPostMutation.isPending} />
+            <PostForm authors={authorOptions} onSubmit={(data) => addPostMutation.mutate(data)} isPending={addPostMutation.isPending} />
           </div>
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold tracking-wider text-slate-400 uppercase px-2">System Core Ledger</h3>
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-xs font-semibold tracking-wider text-slate-400 uppercase">System Core Ledger</h3>
+            {paginated && paginated.total > 0 && (
+              <span className="text-[10px] font-medium text-slate-400">
+                {paginated.total} total · page {paginated.page}/{paginated.totalPages}
+              </span>
+            )}
+          </div>
           <AuthorList
             authors={authors}
             onDelete={(author) => {
@@ -133,6 +155,27 @@ export function Dashboard() {
             }}
             onEdit={setEditingAuthor}
           />
+          {paginated && paginated.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={13} /> Prev
+              </button>
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Page {page} of {paginated.totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(paginated.totalPages, p + 1))}
+                disabled={page >= paginated.totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next <ChevronRight size={13} />
+              </button>
+            </div>
+          )}
         </div>
 
         {editingAuthor && (

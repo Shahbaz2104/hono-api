@@ -8,6 +8,13 @@
       "when": 1785527270305,
       "tag": "0000_parallel_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792256747134,
+      "tag": "0001_free_amazoness",
+      "breakpoints": true
     }
   ]
 }
